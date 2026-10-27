@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import heroimg from './assets/hero.png'
 import {
   Document,
   Page,
-  Text,
+  Text, Image,
   View,
   StyleSheet,
   PDFDownloadLink,
@@ -27,24 +28,44 @@ const pdfStyles = StyleSheet.create({
     backgroundColor: "#ffffff",
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
+    fontSize: 8 ,
     marginBottom: 32,
-    paddingBottom: 20,
+    paddingBottom: 5,
     borderBottom: "2px solid #1a1a2e",
   },
-  companyBlock: { flex: 1 },
-  companyName: { fontSize: 20, fontFamily: "Cairo", color: "#1a1a2e", marginBottom: 4 },
+  headercompany: {
+  flexDirection: "row",
+  gap:5,
+  width:"100%",
+  
+  justifyContent:"space-evenly",
+    marginBottom: 15,
+    paddingBottom: 4,
+   borderBottom:"1px solid #d2d2d2"
+  },
+  headercustomer: {
+    flexDirection: "row",
+    justifyContent:"space-between",
+    gap:10,
+  
+    paddingBottom: 10,
+  },
+  companyBlock: { flex: 1 ,textAlign:"right"},
+  imegeBlock:{flex:1, alignItems:"center",padding:"10px",},
+  customerBlock: { flex: 1 },
+  companyName: { fontSize: 10, fontFamily: "Cairo", color: "#1a1a2e", marginBottom: 4, textAlign:"right" },
+  customerName: { fontSize: 10, fontFamily: "Cairo", color: "#1a1a2e", marginBottom: 4 },
   taxId: { fontSize: 9, color: "#555" },
-  metaBlock: { alignItems: "flex-end" },
-  quoteTitle: { fontSize: 16, fontFamily: "Cairo", color: "#c9a84c", marginBottom: 6 },
+  metaBlock: { alignItems: "flex-end",flex:1 },
+  quoteTitle: { fontSize: 16, fontFamily: "Cairo", color: "#1a1a2e", marginBottom: 6 },
   metaRow: { flexDirection: "row", gap: 4, marginBottom: 2 },
   metaLabel: { fontSize: 9, color: "#888" },
   metaValue: { fontSize: 9, fontFamily: "Cairo" },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#1a1a2e",
-    color: "#fff",
+    backgroundColor: "#d2d2d2",
+    color: "#1a1a2e",
     padding: "8 6",
     borderRadius: 4,
     marginBottom: 2,
@@ -60,20 +81,20 @@ const pdfStyles = StyleSheet.create({
     backgroundColor: "#f9f7f1",
     borderBottom: "0.5px solid #e5e5e5",
   },
-  colName: { flex: 3, fontSize: 9 ,textAlign:"right"},
+  colName: { flex: 3, fontSize: 9, textAlign: "right" },
   colUnit: { flex: 1.5, fontSize: 9, textAlign: "center" },
   colQty: { flex: 1, fontSize: 9, textAlign: "center" },
   colPrice: { flex: 1.5, fontSize: 9, textAlign: "center" },
   colSub: { flex: 1.5, fontSize: 9, textAlign: "center" },
   colVat: { flex: 1.5, fontSize: 9, textAlign: "center" },
   colTotal: { flex: 1.5, fontSize: 9, textAlign: "center" },
-  colNameH: { flex: 3, fontSize: 9, color: "#fff", fontFamily: "Cairo", textAlign:"right",paddingRight:"10px"},
-  colUnitH: { flex: 1.5, fontSize: 9, color: "#fff", textAlign: "center", fontFamily: "Cairo" },
-  colQtyH: { flex: 1, fontSize: 9, color: "#fff", textAlign: "center", fontFamily: "Cairo" },
-  colPriceH: { flex: 1.5, fontSize: 9, color: "#fff", textAlign: "center", fontFamily: "Cairo" },
-  colSubH: { flex: 1.5, fontSize: 9, color: "#fff", textAlign: "center", fontFamily: "Cairo" },
-  colVatH: { flex: 1.5, fontSize: 9, color: "#fff", textAlign: "center", fontFamily: "Cairo" },
-  colTotalH: { flex: 1.5, fontSize: 9, color: "#fff", textAlign: "center", fontFamily: "Cairo" },
+  colNameH: { flex: 3, fontSize: 9, color: "#12100d", fontFamily: "Cairo", textAlign: "right", paddingRight: "10px" },
+  colUnitH: { flex: 1.5, fontSize: 9, color: "#12100d", textAlign: "center", fontFamily: "Cairo" },
+  colQtyH: { flex: 1, fontSize: 9, color: "#12100d", textAlign: "center", fontFamily: "Cairo" },
+  colPriceH: { flex: 1.5, fontSize: 9, color: "#12100d", textAlign: "center", fontFamily: "Cairo" },
+  colSubH: { flex: 1.5, fontSize: 9, color: "#12100d", textAlign: "center", fontFamily: "Cairo" },
+  colVatH: { flex: 1.5, fontSize: 9, color: "#12100d", textAlign: "center", fontFamily: "Cairo" },
+  colTotalH: { flex: 1.5, fontSize: 9, color: "#12100d", textAlign: "center", fontFamily: "Cairo" },
   summarySection: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -95,38 +116,53 @@ const pdfStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     padding: "9 12",
-    backgroundColor: "#1a1a2e",
+    backgroundColor: "#d2d2d2",
   },
   summaryLabel: { fontSize: 9, color: "#555" },
   summaryValue: { fontSize: 9, fontFamily: "Cairo" },
-  summaryTotalLabel: { fontSize: 10, color: "#fff", fontFamily: "Cairo" },
-  summaryTotalValue: { fontSize: 10, color: "#c9a84c", fontFamily: "Cairo" },
+  summaryTotalLabel: { fontSize: 10, color: "#12100d", fontFamily: "Cairo" },
+  summaryTotalValue: { fontSize: 10, color: "#12100d", fontFamily: "Cairo" },
   footer: { marginTop: 40, paddingTop: 12, borderTop: "0.5px solid #ddd", textAlign: "center", fontSize: 8, color: "#aaa" },
 });
 
 // ─── PDF Document ─────────────────────────────────────────────────────────────
-function QuotePDF({ company, taxId, date, quoteNumber, items, subtotal, totalVat, grandTotal }) {
+function QuotePDF({ company, taxId, textcustomer, customername, date, quoteNumber, items, subtotal, totalVat, grandTotal }) {
   return (
     <Document>
       <Page size="A4" style={pdfStyles.page}>
         {/* Header */}
-        <View style={pdfStyles.header}>
-          <View style={pdfStyles.companyBlock}>
-            <Text style={pdfStyles.companyName}>{company || "اسم الشركة"}</Text>
-            <Text style={pdfStyles.taxId}>الرقم الضريبي: {taxId || "—"}</Text>
-          </View>
-          <View style={pdfStyles.metaBlock}>
-          
-            <View style={pdfStyles.metaRow}>
-              <Text style={pdfStyles.metaLabel}>التاريخ:</Text>
-              <Text style={pdfStyles.metaValue}>{date || "—"}</Text>
-            </View>
+        <View style={pdfStyles.header} >
+          <View style={pdfStyles.headercompany}>
 
-            <View style={pdfStyles.metaRow}>
-              <Text style={pdfStyles.metaLabel}>رقم العرض:</Text>
-              <Text style={pdfStyles.metaValue}>{quoteNumber || "—"}</Text>
+              <View style={pdfStyles.metaBlock}>
+
+              <Text style={pdfStyles.quoteTitle}>عرض سعر</Text>
+              <View style={pdfStyles.metaRow}>
+                <Text style={pdfStyles.metaLabel}>التاريخ:</Text>
+                <Text style={pdfStyles.metaValue}>{date || "—"}</Text>
+              </View>
+
+              <View style={pdfStyles.metaRow}>
+                <Text style={pdfStyles.metaLabel}>رقم العرض:</Text>
+                <Text style={pdfStyles.metaValue}>{quoteNumber || "—"}</Text>
+              </View>
+
             </View>
-            <Text style={pdfStyles.quoteTitle}>عرض سعر</Text>
+            <View style={pdfStyles.imegeBlock}>
+              {/* <Image src={heroimg} style={{ width: "30px", height: "30px", }} /> */}
+            </View>
+          
+            <View style={pdfStyles.companyBlock}>
+              <Text style={pdfStyles.companyName}>{company || "مؤسسة محمد موسى الشيشي للتجارة"}</Text>
+              <Text style={pdfStyles.taxId}>الرقم الضريبي: {taxId || "305000792000003"}</Text>
+            </View>
+          </View>
+          <View style={pdfStyles.headercustomer}>
+            <Text style={pdfStyles.taxId}>الرقم الضريبي: {textcustomer || "—"}</Text>
+            <Text style={pdfStyles.customerName}>العميل : {customername || "غير مسجل "}</Text>
+            
+
+
           </View>
         </View>
 
@@ -139,7 +175,7 @@ function QuotePDF({ company, taxId, date, quoteNumber, items, subtotal, totalVat
           <Text style={pdfStyles.colQtyH}>الكمية</Text>
           <Text style={pdfStyles.colUnitH}>الوحدة</Text>
           <Text style={pdfStyles.colNameH}>المنتج</Text>
-          <Text style={{width:"20px",textAlign:"center",paddingLeft:"5px"}}>#</Text>
+          <Text style={{ width: "20px", textAlign: "center", paddingLeft: "5px" }}>#</Text>
         </View>
 
         {items.map((item, idx) => (
@@ -151,7 +187,7 @@ function QuotePDF({ company, taxId, date, quoteNumber, items, subtotal, totalVat
             <Text style={pdfStyles.colQty}>{item.qty}</Text>
             <Text style={pdfStyles.colUnit}>{item.unit}</Text>
             <Text style={pdfStyles.colName}>{item.name}</Text>
-            <Text style={{width:"20px",textAlign:"center",paddingLeft:"5px"}}>{idx+1}</Text>
+            <Text style={{ width: "20px", textAlign: "center", paddingLeft: "5px" }}>{idx + 1}</Text>
           </View>
         ))}
 
@@ -185,12 +221,24 @@ const emptyItem = () => ({ name: "", unit: "كرتون", qty: "", price: "", sub
 export default function QuotationForm() {
   const [company, setCompany] = useState("");
   const [taxId, setTaxId] = useState("");
+  const [customername, setcustomername] = useState("");
+  const [textcustomer, settextcustomer] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [quoteNumber, setQuoteNumber] = useState("QT-001");
   const [items, setItems] = useState([emptyItem(), emptyItem()]);
+  // حالة التحكم في تصيير الـ PDF المتأخر لمنع انهيار الذاكرة
+  const [readyToDownload, setReadyToDownload] = useState(false);
 
   const VAT_RATE = 0.15;
-
+  // توليد رقم عرض السعر لمرة واحدة عند تحميل المكون
+  useEffect(() => {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      const shortId = crypto.randomUUID().split('-')[0].toUpperCase();
+      setQuoteNumber(`QT-${shortId}`);
+    } else {
+      setQuoteNumber(`QT-${Math.floor(1000 + Math.random() * 9000)}`);
+    }
+  }, []);
   const calcItem = (item) => {
     const qty = parseFloat(item.qty) || 0;
     const price = parseFloat(item.price) || 0;
@@ -201,6 +249,7 @@ export default function QuotationForm() {
   };
 
   const updateItem = (idx, field, value) => {
+    setReadyToDownload(false); // إلغاء تفعيل الـ PDF فوراً عند التعديل لحماية الذاكرة
     setItems(prev => {
       const next = [...prev];
       next[idx] = calcItem({ ...next[idx], [field]: value });
@@ -208,13 +257,14 @@ export default function QuotationForm() {
     });
   };
 
-  const addItem = () => setItems(prev => [...prev, emptyItem()]);
+
+  const addItem = () => { setItems(prev => [...prev, emptyItem()]); setReadyToDownload(false); };
   const removeItem = (idx) => setItems(prev => prev.filter((_, i) => i !== idx));
 
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
   const totalVat = items.reduce((s, i) => s + i.vat, 0);
   const grandTotal = items.reduce((s, i) => s + i.total, 0);
-  let newdata=[];
+  let newdata = [];
   const inputCls = {
     width: "100%",
     padding: "9px 12px",
@@ -222,6 +272,19 @@ export default function QuotationForm() {
     border: "1.5px solid #d4c89a",
     background: "#fffdf4",
     fontSize: 14,
+    color: "#1a1a2e",
+    outline: "none",
+    boxSizing: "border-box",
+    transition: "border-color 0.2s",
+    fontFamily: "'Tajawal', sans-serif",
+  };
+  const inputCls_title = {
+    width: "100%",
+    padding: "9px 12px",
+    borderRadius: 8,
+    border: "1.5px solid #d4c89a",
+    background: "#fffdf4",
+    fontSize: 13,
     color: "#1a1a2e",
     outline: "none",
     boxSizing: "border-box",
@@ -305,21 +368,34 @@ export default function QuotationForm() {
           <div className="qf-section-title">بيانات الشركة والعرض</div>
           <div className="qf-grid-4">
             <div>
-              <label style={labelCls}>اسم الشركة</label>
-              <input className="qf-inp" style={inputCls} placeholder="مثال: شركة الأفق للتقنية" value={company} onChange={e => setCompany(e.target.value)} />
+              <label style={inputCls_title}>اسم الشركة</label>
+              <input className="qf-inp" style={inputCls} placeholder="مثال: شركة الأفق للتقنية" value={company} onChange={(e) => { setCompany(e.target.value); setReadyToDownload(false); }} />
             </div>
             <div>
               <label style={labelCls}>الرقم الضريبي</label>
-              <input className="qf-inp" style={inputCls} placeholder="300XXXXXXXXX" value={taxId} onChange={e => setTaxId(e.target.value)} />
+              <input className="qf-inp" style={inputCls} placeholder="300XXXXXXXXX" value={taxId} onChange={(e) => { setTaxId(e.target.value); setReadyToDownload(false) }} />
             </div>
             <div>
               <label style={labelCls}>تاريخ العرض</label>
-              <input className="qf-inp" style={inputCls} type="date" value={date} onChange={e => setDate(e.target.value)} />
+              <input className="qf-inp" style={inputCls} type="date" value={date} onChange={(e) => { setDate(e.target.value); setReadyToDownload(false) }} />
             </div>
             <div>
               <label style={labelCls}>رقم عرض السعر</label>
-              <input className="qf-inp" style={inputCls} placeholder="QT-001" value={quoteNumber} onChange={e => setQuoteNumber(e.target.value)} />
+              <input className="qf-inp" style={inputCls} placeholder="QT-001" value={quoteNumber} onChange={(e) => { setQuoteNumber(e.target.value); setReadyToDownload(false) }} />
             </div>
+          </div>
+          <div className="qf-section-title">بيانات العميل</div>
+
+          <div className="qf-grid-4">
+            <div>
+              <label style={labelCls}>اسم العميل</label>
+              <input className="qf-inp" style={inputCls} placeholder="مثال: شركة الأفق للتقنية" value={customername} onChange={(e) => { setcustomername(e.target.value); setReadyToDownload(false); }} />
+            </div>
+            <div>
+              <label style={labelCls}>الرقم الضريبي للعميل</label>
+              <input className="qf-inp" style={inputCls} placeholder="300XXXXXXXXX" value={textcustomer} onChange={(e) => { settextcustomer(e.target.value); setReadyToDownload(false) }} />
+            </div>
+
           </div>
         </div>
 
@@ -346,23 +422,23 @@ export default function QuotationForm() {
                   <tr key={idx}>
                     <td style={{ textAlign: "center", fontSize: 12, color: "#aaa", fontWeight: 600 }}>{idx + 1}</td>
                     <td>
-                      <input  className="qf-td-inp" placeholder="أدخل اسم المنتج أو الخدمة" value={item.name} onChange={e => updateItem(idx, "name", e.target.value)} />
+                      <input className="qf-td-inp" placeholder="أدخل اسم المنتج أو الخدمة" value={item.name} onChange={e => updateItem(idx, "name", e.target.value)} />
                     </td>
                     <td>
                       <select className="qf-td-inp" value={item.unit} onChange={e => updateItem(idx, "unit", e.target.value)}>
                         <option value="كرتون">كرتون</option>
                         <option value="حبة">حبة</option>
-                        <option value="طن">طن</option>
-                        <option value="لتر">لتر</option>
-                        <option value="متر">متر</option>
+                        <option value="درزن">درزن</option>
+                        <option value="ربطه">ربطه</option>
+                        <option value="كيس">كيس</option>
                         <option value="خدمة">خدمة</option>
                       </select>
                     </td>
                     <td>
-                      <input className="qf-td-inp" type="number" min="0" placeholder="0" value={item.qty} onChange={e => updateItem(idx, "qty", e.target.value)} style={{ textAlign: "center" }} required/>
+                      <input className="qf-td-inp" type="number" min="0" placeholder="0" value={item.qty} onChange={e => updateItem(idx, "qty", e.target.value)} style={{ textAlign: "center" }} required />
                     </td>
                     <td>
-                      <input className="qf-td-inp" type="number" min="0" step="0.01" placeholder="0.00" value={item.price} onChange={e => updateItem(idx, "price", e.target.value)} style={{ textAlign: "left" }} required/>
+                      <input className="qf-td-inp" type="number" min="0" step="0.01" placeholder="0.00" value={item.price} onChange={e => updateItem(idx, "price", e.target.value)} style={{ textAlign: "left" }} required />
                     </td>
                     <td><span className="qf-badge">{item.subtotal.toFixed(2)} ر.س</span></td>
                     <td><span className="qf-badge" style={{ background: "#fff3cd", color: "#856404" }}>{item.vat.toFixed(2)} ر.س</span></td>
@@ -389,35 +465,49 @@ export default function QuotationForm() {
               <div style={{ marginBottom: 14, padding: "12px 16px", background: "#f9f7f1", borderRadius: 10, border: "1px solid #e8dfc0", fontSize: 13, color: "#7a6930" }}>
                 <strong>ملاحظة:</strong> يتضمن السعر ضريبة القيمة المضافة بنسبة 15% وفقاً للأنظمة المعمول بها في المملكة العربية السعودية.
               </div>
-           
 
-              <PDFDownloadLink key={JSON.stringify({ company, taxId, date, quoteNumber, items })} 
-                document={
-                  <QuotePDF
-                    company={company}
-                    taxId={taxId}
-                    date={date}
-                    quoteNumber={quoteNumber}
-                    items={items}
-                    subtotal={subtotal}
-                    totalVat={totalVat}
-                    grandTotal={grandTotal}
-                  />
-                }
-                fileName={`عرض-سعر-${quoteNumber || "جديد"}.pdf`}
-              >
-                {({ loading }) => (
-                  <button className="qf-pdf-btn" disabled={loading}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="12" y1="18" x2="12" y2="12" />
-                      <polyline points="9 15 12 18 15 15" />
-                    </svg>
-                    {loading ? "جاري التجهيز..." : "حفظ كملف PDF"}
+              {/* منطقة المعالجة والتحميل الذكية للـ PDF */}
+              <div style={{ marginTop: "20px" }}>
+                {!readyToDownload ? (
+                  <button
+                    onClick={() => setReadyToDownload(true)}
+                    style={{ padding: "10px 20px", background: "#c9a84c", color: "#1a1a2e", border: "none", cursor: "pointer", fontWeight: "bold", borderRadius: "4px" }}
+                  >
+                    🔄 اعتماد البيانات وتجهيز ملف PDF
                   </button>
+                ) : (
+                  <PDFDownloadLink
+                    key={quoteNumber || "new-quote"}
+                    document={
+                      <QuotePDF
+                        company={company}
+                        taxId={taxId}
+                        customername={customername}
+                        textcustomer={textcustomer}
+                        date={date}
+                        quoteNumber={quoteNumber}
+                        items={items}
+                        subtotal={subtotal}
+                        totalVat={totalVat}
+                        grandTotal={grandTotal}
+                      />
+                    }
+                    fileName={`عرض-سعر-${quoteNumber || "جديد"}.pdf`}
+                  >
+                    {({ loading, error }) => {
+                      if (error) {
+                        console.error("PDF Error:", error);
+                        return <button style={{ padding: "10px 20px", background: "#f44336", color: "#fff", border: "none", borderRadius: "4px" }}>حدث خطأ، يرجى إعادة المحاولة</button>;
+                      }
+                      return (
+                        <button disabled={loading} style={{ padding: "10px 20px", background: "#1a1a2e", color: "#fff", border: "none", cursor: "pointer", borderRadius: "4px" }}>
+                          {loading ? "جاري إنشاء مستند PDF..." : "📥 اضغط هنا لتحميل ملف PDF جاهد"}
+                        </button>
+                      );
+                    }}
+                  </PDFDownloadLink>
                 )}
-              </PDFDownloadLink>
+              </div>
             </div>
 
             {/* Summary Box */}
